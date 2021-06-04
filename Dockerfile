@@ -1,18 +1,19 @@
-FROM centos:7
+FROM centos:8
 
 MAINTAINER Didier FABERT (tartare) <didier@tartarefr.eu>
 
 # RPM REPOs
-RUN yum install -y \
+RUN dnf install -y \
     epel-release \
-    && yum clean all \
+    && dnf module enable cobbler -y \
+    && dnf clean all \
     && rm -rf /var/cache/yum
 
-RUN yum update -y \
-    && yum clean all \
+RUN dnf update -y \
+    && dnf clean all \
     && rm -rf /var/cache/yum
 
-RUN yum install -y \
+RUN dnf install -y \
   cobbler \
   cobbler-web \
   pykickstart \
@@ -23,7 +24,7 @@ RUN yum install -y \
   net-tools \
   memtest86+ \
   which \
-  && yum clean all \
+  && dnf clean all \
   &&  rm -rf /var/cache/yum
 
 # Copy supervisor conf
@@ -46,28 +47,28 @@ COPY snippets/yum_update /var/lib/cobbler/snippets/yum_update
 
 
 # Use personnal snippets
-RUN for kickstart in sample sample_end legacy ; \
-    do \
-        additional_post_snippets="" ; \
-        for snippet in \
-                        add_repos \
-                        disable_prelink \
-                        systemd_persistant_journal \
-                        rkhunter \
-                        enable_X \
-                        yum_update ; \
-        do \
-          additional_post_snippets="${additional_post_snippets}\n\$SNIPPET('${snippet}')" ; \
-        done ; \
-        sed -i \
-           -e "/post_anamon/ s/$/${additional_post_snippets}/" \
-           -e "/^autopart/ s/^.*$/\$SNIPPET('partition_config')/" \
-           -e "/^skipx/ s/^.*$/\$SNIPPET('configure_X')/" \
-       /var/lib/cobbler/kickstarts/${kickstart}.ks ; \
-    done
+#RUN for kickstart in sample sample_end legacy ; \
+#    do \
+#        additional_post_snippets="" ; \
+#        for snippet in \
+#                        add_repos \
+#                        disable_prelink \
+#                        systemd_persistant_journal \
+#                        rkhunter \
+#                        enable_X \
+#                        yum_update ; \
+#        do \
+#          additional_post_snippets="${additional_post_snippets}\n\$SNIPPET('${snippet}')" ; \
+#        done ; \
+#        sed -i \
+#           -e "/post_anamon/ s/$/${additional_post_snippets}/" \
+#           -e "/^autopart/ s/^.*$/\$SNIPPET('partition_config')/" \
+#           -e "/^skipx/ s/^.*$/\$SNIPPET('configure_X')/" \
+#       /var/lib/cobbler/kickstarts/${kickstart}.ks ; \
+#    done
 
 # Install vim-enhanced by default and desktop packages if profile have el_type set to desktop (ksmeta)
-RUN echo -e "@core\n\nvim-enhanced\n#set \$el_type = \$getVar('type', 'minimal')\n#if \$el_type == 'desktop'\n@base\n@network-tools\n@x11\n@graphical-admin-tools\n#set \$el_version = \$getVar('os_version', None)\n#if \$el_version == 'rhel6'\n@desktop-platform\n@basic-desktop\n#else if \$el_version == 'rhel7'\n@gnome-desktop\n#end if\n#end if\nkernel" >> /var/lib/cobbler/snippets/func_install_if_enabled
+#RUN echo -e "@core\n\nvim-enhanced\n#set \$el_type = \$getVar('type', 'minimal')\n#if \$el_type == 'desktop'\n@base\n@network-tools\n@x11\n@graphical-admin-tools\n#set \$el_version = \$getVar('os_version', None)\n#if \$el_version == 'rhel6'\n@desktop-platform\n@basic-desktop\n#else if \$el_version == 'rhel7'\n@gnome-desktop\n#end if\n#end if\nkernel" >> /var/lib/cobbler/snippets/func_install_if_enabled
 
 COPY first-sync.sh /usr/local/bin/first-sync.sh
 COPY entrypoint.sh /entrypoint.sh
